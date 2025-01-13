@@ -34,4 +34,4 @@ RUN mkdir -p /app/data /app/logs /app/config
 EXPOSE 8080
 
 # Run the application
-CMD ["./telegram-roulette"]
+CMD ["./main"]
