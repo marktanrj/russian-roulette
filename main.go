@@ -55,7 +55,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	bot.Handle("/startroulette", func(m *telebot.Message) {
+	bot.Handle("/create", func(m *telebot.Message) {
 		mutex.Lock()
 		defer mutex.Unlock()
 
@@ -85,7 +85,7 @@ func main() {
 
 		game, exists := games[m.Chat.ID]
 		if !exists || !game.IsActive {
-			bot.Send(m.Chat, "No active game! Use /startroulette to start a new game.")
+			bot.Send(m.Chat, "No active game! Use /create to create a new game.")
 			return
 		}
 
@@ -104,13 +104,13 @@ func main() {
 		bot.Send(m.Chat, fmt.Sprintf("@%s joined the game! Current players: %v", m.Sender.Username, game.Players))
 	})
 
-	bot.Handle("/startgame", func(m *telebot.Message) {
+	bot.Handle("/start", func(m *telebot.Message) {
 		mutex.Lock()
 		game, exists := games[m.Chat.ID]
 		mutex.Unlock()
 
 		if !exists || !game.IsActive {
-			bot.Send(m.Chat, "No active game! Use /startroulette to start a new game.")
+			bot.Send(m.Chat, "No active game! Use /create to create a new game.")
 			return
 		}
 
@@ -123,14 +123,13 @@ func main() {
 		bot.Send(m.Chat, fmt.Sprintf("First up: @%s", game.Players[0]))
 	})
 
-	// New command to skip turn
 	bot.Handle("/skip", func(m *telebot.Message) {
 		mutex.Lock()
 		defer mutex.Unlock()
 
 		game, exists := games[m.Chat.ID]
 		if !exists || !game.IsActive {
-			bot.Send(m.Chat, "No active game! Use /startroulette to start a new game.")
+			bot.Send(m.Chat, "No active game! Use /create to create a new game.")
 			return
 		}
 
@@ -160,7 +159,7 @@ func main() {
 
 		game, exists := games[m.Chat.ID]
 		if !exists || !game.IsActive {
-			bot.Send(m.Chat, "No active game! Use /startroulette to start a new game.")
+			bot.Send(m.Chat, "No active game! Use /create to create a new game.")
 			return
 		}
 
@@ -200,7 +199,7 @@ func main() {
 		bot.Send(m.Chat, fmt.Sprintf("Next up: @%s", nextPlayer))
 	})
 
-	bot.Handle("/stopgame", func(m *telebot.Message) {
+	bot.Handle("/stop", func(m *telebot.Message) {
 		mutex.Lock()
 		defer mutex.Unlock()
 
@@ -214,13 +213,13 @@ func main() {
 
 	bot.Handle("/help", func(m *telebot.Message) {
 		helpText := `Available commands:
-/startroulette - Start a new game
+/create - Start a new game
 /join - Join the current game
-/startgame - Start the game after players have joined
+/start - Start the game after players have joined
 /pull - Pull the trigger on your turn
 /skip - Skip your turn (max 2 skips per player)
 /status - Show current game status
-/stopgame - Stop the current game
+/stop - Stop the current game
 /help - Show this help message`
 		bot.Send(m.Chat, helpText)
 	})
