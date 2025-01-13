@@ -53,6 +53,7 @@ jobs:
               -v /srv/tg-roulette/data:/app/data \
               -v /srv/tg-roulette/logs:/app/logs \
               -v /srv/tg-roulette/config:/app/config \
+              -e TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }} \
               tg-roulette
               
             # Cleanup
