@@ -78,7 +78,7 @@ func main() {
 			Skips:      map[string]int{playerID: 2}, // Initialize with 2 skips
 		}
 
-		bot.Send(m.Chat, fmt.Sprintf("🎮 @%s started a game of Russian Roulette!\nUse /join to join the game.\nUse /startgame when all players have joined.", m.Sender.Username))
+		bot.Send(m.Chat, fmt.Sprintf("🎮 @%s started a game of Russian Roulette!\nUse /join to join the game.\nUse /start when all players have joined.", m.Sender.Username))
 	})
 
 	bot.Handle("/join", func(m *telebot.Message) {
@@ -174,7 +174,7 @@ func main() {
 		// Check against PullCount instead of CurrentPos
 		if game.PullCount == game.Bullet {
 			bot.Send(m.Chat, fmt.Sprintf("💥 BANG! @%s is dead! Game Over!", m.Sender.Username))
-			games[m.Chat.ID] = nil
+			delete(games, m.Chat.ID)
 			return
 		}
 
@@ -183,7 +183,7 @@ func main() {
 		if remainingChambers <= 0 {
 			// If no chambers left, the bullet must be in the last position
 			bot.Send(m.Chat, fmt.Sprintf("💥 BANG! @%s is dead! Game Over!", m.Sender.Username))
-			games[m.Chat.ID] = nil
+			delete(games, m.Chat.ID)
 			return
 		}
 
@@ -208,7 +208,7 @@ func main() {
 		defer mutex.Unlock()
 
 		if game, exists := games[m.Chat.ID]; exists && game.IsActive {
-			games[m.Chat.ID] = nil
+			delete(games, m.Chat.ID)
 			bot.Send(m.Chat, "Game stopped.")
 		} else {
 			bot.Send(m.Chat, "No active game to stop!")
