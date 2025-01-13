@@ -244,8 +244,7 @@ func main() {
 	})
 
 	bot.Handle("/help", func(m *telebot.Message) {
-		helpText := `Available commands:
-Game commands:
+		helpText := `Game commands:
 /create - Start a new game
 /join - Join the current game
 /start - Start the game after players have joined
