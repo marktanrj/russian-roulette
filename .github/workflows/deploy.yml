@@ -20,17 +20,6 @@ jobs:
       - name: Save Docker image
         run: docker save tg-roulette > tg-roulette.tar
       
-      # First ensure directory exists and set permissions
-      - name: Prepare directory
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            sudo mkdir -p /srv/tg-roulette/{data,logs,config}
-            sudo chown -R $USER:$USER /srv/tg-roulette
-      
       # Copy image to server and deploy
       - name: Deploy to server
         uses: appleboy/scp-action@master
