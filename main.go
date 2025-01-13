@@ -27,6 +27,7 @@ type Game struct {
 	Players    []string
 	Bullet     int
 	CurrentPos int
+	PullCount  int // Track actual trigger pulls separately
 	IsActive   bool
 	Skips      map[string]int // Track remaining skips for each player
 }
@@ -67,11 +68,12 @@ func main() {
 		playerID := getPlayerID(m.Sender)
 		log.Printf("New game started by player: %s", playerID)
 
-		// Initialize new game with skips tracking
+		// Initialize new game with skips tracking and PullCount
 		games[m.Chat.ID] = &Game{
 			Players:    []string{playerID},
 			Bullet:     rand.Intn(6),
 			CurrentPos: 0,
+			PullCount:  0,
 			IsActive:   true,
 			Skips:      map[string]int{playerID: 2}, // Initialize with 2 skips
 		}
@@ -134,7 +136,7 @@ func main() {
 		}
 
 		currentPlayer := game.Players[game.CurrentPos%len(game.Players)]
-		if m.Sender.Username != currentPlayer {
+		if getPlayerID(m.Sender) != currentPlayer {
 			bot.Send(m.Chat, fmt.Sprintf("It's not your turn! Waiting for @%s to play.", currentPlayer))
 			return
 		}
@@ -145,7 +147,7 @@ func main() {
 		}
 
 		game.Skips[currentPlayer]--
-		game.CurrentPos++
+		game.CurrentPos++ // Only increment turn position, not pull count
 		nextPlayer := game.Players[game.CurrentPos%len(game.Players)]
 
 		skipsLeft := game.Skips[currentPlayer]
@@ -164,19 +166,20 @@ func main() {
 		}
 
 		currentPlayer := game.Players[game.CurrentPos%len(game.Players)]
-		if m.Sender.Username != currentPlayer {
+		if getPlayerID(m.Sender) != currentPlayer {
 			bot.Send(m.Chat, fmt.Sprintf("It's not your turn! Waiting for @%s to pull the trigger.", currentPlayer))
 			return
 		}
 
-		if game.CurrentPos == game.Bullet {
+		// Check against PullCount instead of CurrentPos
+		if game.PullCount == game.Bullet {
 			bot.Send(m.Chat, fmt.Sprintf("💥 BANG! @%s is dead! Game Over!", m.Sender.Username))
 			games[m.Chat.ID] = nil
 			return
 		}
 
-		// Calculate remaining chambers (minimum of 1 to prevent division by zero)
-		remainingChambers := 6 - game.CurrentPos - 1
+		// Calculate remaining chambers based on pulls (minimum of 1 to prevent division by zero)
+		remainingChambers := 6 - game.PullCount - 1
 		if remainingChambers <= 0 {
 			// If no chambers left, the bullet must be in the last position
 			bot.Send(m.Chat, fmt.Sprintf("💥 BANG! @%s is dead! Game Over!", m.Sender.Username))
@@ -194,7 +197,8 @@ func main() {
 			game.Skips[currentPlayer])
 		bot.Send(m.Chat, survivalMsg)
 
-		game.CurrentPos++
+		game.PullCount++  // Increment actual pulls
+		game.CurrentPos++ // Increment turn position
 		nextPlayer := game.Players[game.CurrentPos%len(game.Players)]
 		bot.Send(m.Chat, fmt.Sprintf("Next up: @%s", nextPlayer))
 	})
