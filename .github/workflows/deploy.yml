@@ -1,0 +1,69 @@
+name: Deploy to Ubuntu
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Build image in GitHub Actions
+      - name: Build Docker image
+        run: docker build -t tg-roulette .
+      
+      # Save image to tar file
+      - name: Save Docker image
+        run: docker save tg-roulette > tg-roulette.tar
+      
+      # First ensure directory exists and set permissions
+      - name: Prepare directory
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sudo mkdir -p /srv/tg-roulette/{data,logs,config}
+            sudo chown -R $USER:$USER /srv/tg-roulette
+      
+      # Copy image to server and deploy
+      - name: Deploy to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "tg-roulette.tar"
+          target: "/srv/tg-roulette"
+      
+      - name: Load and run image
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /srv/tg-roulette
+            
+            # Load the image
+            docker load < tg-roulette.tar
+            
+            # Stop and remove existing container
+            docker stop tg-roulette || true
+            docker rm tg-roulette || true
+            
+            # Run new container
+            docker run -d --name tg-roulette \
+              --restart unless-stopped \
+              -p 8080:8080 \
+              -v /srv/tg-roulette/data:/app/data \
+              -v /srv/tg-roulette/logs:/app/logs \
+              -v /srv/tg-roulette/config:/app/config \
+              tg-roulette
+              
+            # Cleanup
+            rm tg-roulette.tar
